@@ -8,7 +8,7 @@ apt-get install nginx -y
 service nginx start
 
 # Replace default page content
-echo "Holberton School" > /var/www/html/index.html
+echo "Holberton School" > /var/www/html/index.nginx-debian.html
 
 # Restarting nginx
-service nginx restart
+service -s nginx reload
