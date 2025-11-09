@@ -1,10 +1,75 @@
 #!/usr/bin/env bash
-# Configure Nginx to add a custom HTTP header X-Served-By
+# Configures Nginx to:
+# - Listen on port 80
+# - Serve "Holberton School" at /
+# - Serve a custom 404 page with "Ceci n'est pas une page"
+# - Redirect /redirect_me to YouTube
+# - Add X-Served-By header with the hostname of the server
 
-apt-get update
-apt-get install -y nginx
+set -e
 
-# Add header with the hostname
-sed -i '/server_name _;/a \\tadd_header X-Served-By $hostname;' /etc/nginx/sites-available/default
+# Update and install Nginx
+apt-get update -y -qq
+apt-get install -y nginx -qq
 
-service nginx restart
+# Start Nginx without systemctl
+service nginx start || /etc/init.d/nginx start
+
+# Prepare website files
+mkdir -p /var/www/html
+echo "Holberton School" > /var/www/html/index.html
+echo "Ceci n'est pas une page" > /var/www/html/404.html
+
+# Backup default Nginx config
+cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bckp || true
+
+# Get the hostname of the server
+SERVER_HOSTNAME=$(hostname)
+
+# Write Nginx config
+cat <<EOF > /etc/nginx/sites-available/default
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html;
+
+    server_name _;
+
+    add_header X-Served-By $SERVER_HOSTNAME;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+
+    location /redirect_me {
+        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
+    }
+
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
+    }
+}
+EOF
+
+# Test Nginx config and restart
+nginx -t
+service nginx restart || /etc/init.d/nginx restart
+
+# Optional verification
+if ! curl -sI localhost | grep -q "X-Served-By: $SERVER_HOSTNAME"; then
+    echo "ERROR: X-Served-By header not working" >&2
+    exit 1
+fi
+
+if ! curl -s localhost | grep -q "Holberton School"; then
+    echo "ERROR: Root page not working" >&2
+    exit 1
+fi
+
+if ! curl -s localhost/xyz | grep -q "Ceci n'est pas une page"; then
+    echo "ERROR: Custom 404 page not working" >&2
+    exit 1
+fi
