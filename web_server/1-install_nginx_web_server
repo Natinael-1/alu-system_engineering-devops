@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
-# Installs nginx and sets up a simple web page
+# Installs Nginx, starts the service, and sets up a page saying 'Holberton School'
 
+set -e
+
+# Update and install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Create a simple index page
-echo "Holberton School for the win!" > /var/www/html/index.nginx-debian.html
+# Start nginx
+service nginx start
 
-# Restart nginx (without systemctl)
+# Set up the default web page
+echo "Holberton School" > /var/www/html/index.html
+echo "Holberton School" > /var/www/html/index.nginx-debian.html
+
+# Restart nginx to apply changes
 service nginx restart
