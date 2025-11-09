@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# Configures NGINX to add a custom HTTP header with the server's hostname
+# Configures a new Ubuntu server with Nginx and custom HTTP response header
 
-apt-get update -y
-apt-get install nginx -y
+# Update package list and install Nginx
+sudo apt-get update
+sudo apt-get install -y nginx
 
-# Start nginx if not running
-service nginx start
+# Configure custom header in Nginx
+sudo bash -c 'cat > /etc/nginx/conf.d/custom_header.conf << EOF
+# Custom header configuration
+add_header X-Served-By \$hostname;
+EOF'
 
-# Path to default config
-CONFIG_FILE="/etc/nginx/sites-available/default"
+# Restart Nginx to apply changes
+sudo service nginx restart
 
-# Ensure add_header line exists in the right location
-# Use double quotes so $hostname expands correctly
-grep -q "add_header X-Served-By" $CONFIG_FILE || \
-sed -i '/location \/ {/a \        add_header X-Served-By '"'"'$hostname'"'"';' $CONFIG_FILE
-
-# Restart nginx to apply the configuration
-service nginx restart
+# Enable Nginx to start on boot
+sudo systemctl enable nginx
