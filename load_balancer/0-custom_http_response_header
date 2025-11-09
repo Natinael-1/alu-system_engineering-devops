@@ -5,14 +5,29 @@
 sudo apt-get update
 sudo apt-get install -y nginx
 
-# Create backup of default Nginx configuration
-sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup
+# Create a custom configuration file that will be included in all server blocks
+sudo bash -c 'cat > /etc/nginx/sites-available/custom_header << EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+    
+    server_name _;
+    
+    location / {
+        add_header X-Served-By \$hostname;
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF'
 
-# Add custom header to the main server block
-sudo sed -i '/^[[:space:]]*location \/ {/a\\n\t\tadd_header X-Served-By $hostname;' /etc/nginx/sites-available/default
+# Enable the custom configuration
+sudo ln -sf /etc/nginx/sites-available/custom_header /etc/nginx/sites-enabled/
 
-# Alternative method: Add to http block for global application
-sudo bash -c 'echo "add_header X-Served-By \$hostname;" >> /etc/nginx/nginx.conf'
+# Remove the default configuration to avoid conflicts
+sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test Nginx configuration
 sudo nginx -t
