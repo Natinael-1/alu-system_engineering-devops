@@ -5,11 +5,17 @@
 sudo apt-get update
 sudo apt-get install -y nginx
 
-# Configure custom header in Nginx
-sudo bash -c 'cat > /etc/nginx/conf.d/custom_header.conf << EOF
-# Custom header configuration
-add_header X-Served-By \$hostname;
-EOF'
+# Create backup of default Nginx configuration
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup
+
+# Add custom header to the main server block
+sudo sed -i '/^[[:space:]]*location \/ {/a\\n\t\tadd_header X-Served-By $hostname;' /etc/nginx/sites-available/default
+
+# Alternative method: Add to http block for global application
+sudo bash -c 'echo "add_header X-Served-By \$hostname;" >> /etc/nginx/nginx.conf'
+
+# Test Nginx configuration
+sudo nginx -t
 
 # Restart Nginx to apply changes
 sudo service nginx restart
