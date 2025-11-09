@@ -11,4 +11,4 @@ service nginx start
 echo "Holberton School" > /var/www/html/index.html
 
 # Restarting nginx
-service -s nginx reload
+service nginx restart
