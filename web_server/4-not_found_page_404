@@ -1,43 +1,88 @@
 #!/usr/bin/env bash
-# Configure your Nginx server to have a custom 404 page that contains the string Ceci n'est pas une page;
+# Configures a new Ubuntu machine:
+# - Installs Nginx
+# - Serves "Holberton School" at root /
+# - Sets up a custom 404 page containing "Ceci n'est pas une page"
+# - Adds /redirect_me to redirect to YouTube
+# - Ensures Nginx is listening on port 80 and firewall allows HTTP
+# - Starts Nginx without systemctl
+# - Verifies configuration
 
-apt-get update
-apt-get install -y nginx
+set -e
 
-mkdir /etc/nginx/html
+echo "[1/10] Updating packages..."
+apt-get update -y -qq
 
-touch /etc/nginx/html/index.html
+echo "[2/10] Installing Nginx..."
+apt-get install nginx -y -qq
 
+echo "[3/10] Starting Nginx..."
+service nginx start || /etc/init.d/nginx start
 
-echo "Holberton School" > /etc/nginx/html/index.html
-echo "Ceci n'est pas une page" > /etc/nginx/html/404.html
+echo "[4/10] Configuring firewall..."
+if command -v ufw >/dev/null 2>&1; then
+    ufw allow 'Nginx HTTP' >/dev/null 2>&1 || true
+    ufw allow 'OpenSSH' >/dev/null 2>&1 || true
+fi
 
+echo "[5/10] Setting up website files..."
+mkdir -p /var/www/html
+chown -R "$USER":"$USER" /var/www/html
+chmod -R 755 /var/www/html
 
-# Create custom 404 error page
-echo "<!DOCTYPE html>
-<html>
-<head>
-  <title>404 Not Found</title>
-</head>
-<body>
-  <h1>404 Not Found</h1>
-  <p>Ceci n'est pas une page</p>
-</body>
-</html>" | sudo tee /var/www/html/404.html >/dev/nullservice nginx restart
+# Root page
+echo "Holberton School" > /var/www/html/index.html
 
-printf %s "server {
-     listen      80 default_server;
-     listen      [::]:80 default_server;
-     root        /etc/nginx/html;
-     index       index.html index.htm;
-     location /redirect_me{
-        return 301 http://youtube.com/;
-     }
-     error_page 404 /404.html;
-     location /404 {
-        root /etc/nginx/html;
-        internal;
-     }
+# Custom 404 page
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
+
+echo "[6/10] Configuring Nginx..."
+# Backup original config
+cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bckp || true
+
+# Replace default config with our custom config
+cat <<EOF > /etc/nginx/sites-available/default
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html;
+
+    server_name _;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+
+    location /redirect_me {
+        return 301 https://www.youtube.com/watch?v=dQw4w9WgXcQ;
+    }
+
+    error_page 404 /error_404.html;
 }
-" > /etc/nginx/sites-available/default
-service nginx restart
+EOF
+
+echo "[7/10] Restarting Nginx..."
+service nginx restart || /etc/init.d/nginx restart
+
+echo "[8/10] Verifying root page..."
+if ! curl -s localhost | grep -q "Holberton School"; then
+    echo "ERROR: Root page does not contain 'Holberton School'." >&2
+    exit 1
+fi
+
+echo "[9/10] Verifying 404 page..."
+if ! curl -sI localhost/thispagedoesnotexist | grep -q "404 Not Found"; then
+    echo "ERROR: 404 status code not returned." >&2
+    exit 1
+fi
+if ! curl -s localhost/thispagedoesnotexist | grep -q "Ceci n'est pas une page"; then
+    echo "ERROR: Custom 404 page content missing." >&2
+    exit 1
+fi
+
+echo "[10/10] All done! Configuration successful."
+echo "Root page: Holberton School"
+echo "Custom 404 page: Ceci n'est pas une page"
+echo "Redirect /redirect_me -> YouTube link"
