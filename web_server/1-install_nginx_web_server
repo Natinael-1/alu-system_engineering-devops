@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+#Updating packages and installing NGINX
+
+apt-get update -y
+apt-get install nginx -y
+
+#This line starts nginx incase it stopped.
+service nginx start
+
+# Replace default page content
+echo "Holberton School" > /var/www/html/index.html
+
+# Restarting nginx
+service nginx restart
