@@ -1,11 +1,28 @@
 #!/usr/bin/env bash
 # Configures Nginx to redirect /redirect_me to another page (301)
 
+# Exit immediately if a command fails
+set -e
+
+# Update package list and install Nginx if not installed
 apt-get update -y
-apt-get install nginx -y
+apt-get install -y nginx
 
-# Add redirect in the default server block
-sed -i '/server_name _;/a \\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\t}' /etc/nginx/sites-available/default
+# Ensure Nginx default site exists
+DEFAULT_SITE="/etc/nginx/sites-available/default"
+if [ ! -f "$DEFAULT_SITE" ]; then
+    echo "Default Nginx site configuration not found!"
+    exit 1
+fi
 
-# Restart nginx without systemctl
+# Add redirect for /redirect_me if it does not exist already
+if ! grep -q "location /redirect_me" "$DEFAULT_SITE"; then
+    # Insert the redirect block after server_name _; line
+    sed -i '/server_name _;/a \\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\t}' "$DEFAULT_SITE"
+fi
+
+# Test Nginx configuration
+nginx -t
+
+# Restart Nginx without systemctl
 service nginx restart
