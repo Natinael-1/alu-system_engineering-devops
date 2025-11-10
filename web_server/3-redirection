@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 # Configures a new Ubuntu machine with Nginx
-# Redirects /redirect_me with a 301 status
+# Redirect /redirect_me to YouTube (301)
 
 # Exit on error
 set -e
 
-# Update package list and install Nginx
+# Update and install Nginx
 apt-get update -y
 apt-get install -y nginx
-
-# Backup original default site
-cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
 
 # Overwrite default site with proper redirect
 cat > /etc/nginx/sites-available/default << EOF
@@ -33,8 +30,8 @@ server {
 }
 EOF
 
-# Test Nginx configuration
+# Test Nginx config
 nginx -t
 
-# Restart Nginx without systemctl
+# Restart Nginx using service (not systemctl)
 service nginx restart
