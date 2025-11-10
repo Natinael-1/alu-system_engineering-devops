@@ -1,37 +1,36 @@
 #!/usr/bin/env bash
-# Configures a new Ubuntu machine with Nginx
-# Redirect /redirect_me to YouTube (301)
+# Configure Nginx to redirect /redirect_me to YouTube with 301 status
 
-# Exit on error
 set -e
 
-# Update and install Nginx
+# Update package list and install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Overwrite default site with proper redirect
-cat > /etc/nginx/sites-available/default << EOF
+# Create or replace default Nginx configuration
+cat > /etc/nginx/sites-available/default << 'EOF'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
     root /var/www/html;
     index index.html index.htm index.nginx-debian.html;
-
     server_name _;
 
     location / {
-        try_files \$uri \$uri/ =404;
+        try_files $uri $uri/ =404;
     }
 
-    location /redirect_me {
+    # Redirect /redirect_me and /redirect_me/ to YouTube
+    location ^~ /redirect_me {
         return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
     }
 }
 EOF
 
-# Test Nginx config
-nginx -t
+# Ensure config is enabled
+ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Restart Nginx using service (not systemctl)
+# Test configuration and restart nginx
+nginx -t
 service nginx restart
