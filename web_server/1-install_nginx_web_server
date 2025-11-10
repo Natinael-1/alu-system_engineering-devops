@@ -1,41 +1,11 @@
 #!/usr/bin/env bash
-# Installs and configures HAProxy to load balance between web-01 and web-02 using roundrobin
+# Installs nginx and sets up a simple web page
 
-# Install HAProxy
 apt-get update -y
-apt-get install -y haproxy
+apt-get install -y nginx
 
-# Enable HAProxy service on system boot
-systemctl enable haproxy
+# Create a simple index page
+echo "Holberton School for the win!" > /var/www/html/index.nginx-debian.html
 
-# Create a backup of the default configuration
-cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
-
-# Configure HAProxy
-cat > /etc/haproxy/haproxy.cfg << 'EOF'
-global
-    log /dev/log    local0
-    log /dev/log    local1 notice
-    daemon
-
-defaults
-    log     global
-    mode    http
-    option  httplog
-    option  dontlognull
-    timeout connect 5000
-    timeout client  50000
-    timeout server  50000
-
-frontend http_front
-    bind *:80
-    default_backend http_back
-
-backend http_back
-    balance roundrobin
-    server web-01 54.158.78.233:80 check
-    server web-02 54.197.104.147:80 check
-EOF
-
-# Restart HAProxy to apply configuration
-systemctl restart haproxy
+# Restart nginx (without systemctl)
+service nginx restart
