@@ -1,25 +1,37 @@
 #!/usr/bin/env bash
-# Configures Nginx to redirect /redirect_me to another page (301)
+# Configures a new Ubuntu machine with Nginx
+# Redirects /redirect_me with a 301 status
 
-# Exit immediately if a command fails
+# Exit on error
 set -e
 
-# Update package list and install Nginx if not installed
+# Update package list and install Nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Ensure Nginx default site exists
-DEFAULT_SITE="/etc/nginx/sites-available/default"
-if [ ! -f "$DEFAULT_SITE" ]; then
-    echo "Default Nginx site configuration not found!"
-    exit 1
-fi
+# Backup original default site
+cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
 
-# Add redirect for /redirect_me if it does not exist already
-if ! grep -q "location /redirect_me" "$DEFAULT_SITE"; then
-    # Insert the redirect block after server_name _; line
-    sed -i '/server_name _;/a \\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\t}' "$DEFAULT_SITE"
-fi
+# Overwrite default site with proper redirect
+cat > /etc/nginx/sites-available/default << EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+
+    server_name _;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+
+    location /redirect_me {
+        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
+    }
+}
+EOF
 
 # Test Nginx configuration
 nginx -t
