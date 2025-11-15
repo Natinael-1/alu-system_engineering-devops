@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# Configures Nginx to have a custom 404 page
+# Configure Nginx with 301 redirect and custom 404 page
 
-# Create custom 404 page
-echo "Ceci n'est pas une page" > /usr/share/nginx/html/404.html
+apt-get update -y
+apt-get install -y nginx
 
-# Edit default config to use custom 404
-sed -i '/server_name _;/a \\terror_page 404 /404.html;\n\tlocation = /404.html {\n\t\troot /usr/share/nginx/html;\n\t\tinternal;\n\t}' /etc/nginx/sites-available/default
+echo "Holberton School for the win!" > /var/www/html/index.html
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
 
-# Restart nginx to apply the changes
-systemctl restart nginx
+# Add redirect block under server_name _; (same strategy used in 3-redirection)
+sed -i "/server_name _;/a \
+    location /redirect_me {\n\
+        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\
+    }" /etc/nginx/sites-available/default
+
+# Add custom 404 page
+sed -i "/server_name _;/a \
+    error_page 404 /error_404.html;" /etc/nginx/sites-available/default
+
+service nginx restart
