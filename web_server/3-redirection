@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 # Configure Nginx to add a 301 redirect
 
-# Install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Create default index.html
 echo "Holberton School for the win!" | tee /var/www/html/index.html > /dev/null
 
-# Add redirect using sed (safe insertion)
-sed -i '/server_name _;/a \
+# Insert redirect block using sed (multiline, Shellcheck-safe)
+sed -i "/server_name _;/a \
     location /redirect_me {\n\
         return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\
-    }' /etc/nginx/sites-available/default
+    }" /etc/nginx/sites-available/default
 
-# Restart nginx without systemctl
 service nginx restart
