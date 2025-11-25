@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Update, install nginx, configure port 80, and restart
+# Install nginx, fix port to 80, and remove incompatible IPv6 listener
 sudo apt-get -y update
 sudo apt-get -y install nginx
 sudo sed -i 's/8080/80/g' /etc/nginx/sites-available/default
+sudo sed -i '/listen \[::\]:80/d' /etc/nginx/sites-available/default
 sudo service nginx restart
