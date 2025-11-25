@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Starts the Apache service and configures the index page to say "Hello Holberton"
+sudo service apache2 start
+echo "Hello Holberton" | sudo tee /var/www/html/index.html
